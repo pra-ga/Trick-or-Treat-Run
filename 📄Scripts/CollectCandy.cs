@@ -9,7 +9,7 @@ public class CollectCandy : MonoBehaviour
     public Transform target; // The object to move towards
     public float duration = 2.0f; // Duration of the movement in seconds
     [SerializeField] float stepSize = 0.1f;
-    //[SerializeField] ParticleSystem collectCandyParticles;
+    [SerializeField] ParticleSystem collectCandyParticles;
 
     private Vector3 startPosition;
     private float startTime;
@@ -34,6 +34,8 @@ public class CollectCandy : MonoBehaviour
             target = candyDetectionRayOrigin.transform;
             startPosition = transform.position;
             StartCoroutine(MoveToTargetSmooth());
+            collectCandyParticles.Play();
+            Debug.Log("Particle System is playing: " + collectCandyParticles.isPlaying);
         }
     }
 
@@ -50,6 +52,7 @@ public class CollectCandy : MonoBehaviour
             // For example, a simple ease-in-out using a curve:
             t = Mathf.SmoothStep(0.0f, stepSize, t);
 
+            collectCandyParticles.Play();
             transform.position = Vector3.Lerp(initialPosition, target.position, t);
             yield return null; // Wait for the next frame
         }
@@ -57,8 +60,17 @@ public class CollectCandy : MonoBehaviour
         // Ensure the object reaches the exact target position at the end
         transform.position = target.position;
         isMoving = false;
-        playerObject.GetComponent<PlayerController>().intCandiesCollected ++  ;
+        playerObject.GetComponent<PlayerController>().intCandiesCollected++;
+        //collectCandyParticles.Stop();
         Destroy(gameObject);
+    }
+    
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Player")
+        {
+            isCollected = true;
+        }
     }
 
     

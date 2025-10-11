@@ -43,6 +43,7 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        //Time.timeScale = 0.5f; //WARNING: This is a hack
         rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
     }
@@ -151,7 +152,7 @@ public class PlayerController : MonoBehaviour
             // Check if the hit object has the target tag
             if (hit.collider.CompareTag(candyTag))
             {
-                Debug.Log("Raycast hit object with tag '" + candyTag + "': " + hit.collider.gameObject.name);
+                //Debug.Log("Raycast hit object with tag '" + candyTag + "': " + hit.collider.gameObject.name);
                 currentCandy = hit.collider.gameObject;
                 currentCandy.GetComponent<CollectCandy>().isCollected = true;
             }

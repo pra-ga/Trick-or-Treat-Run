@@ -33,6 +33,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8647880272479750582}
+  - {fileID: 692240091160914258}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6053910095596170510
@@ -86,7 +87,74 @@ MonoBehaviour:
   target: {fileID: 0}
   duration: 0.5
   stepSize: 1
-  collectCandyParticles: {fileID: 0}
+  collectCandyParticles: {fileID: 6678842035940639962}
+--- !u!1001 &3032359926632015220
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2209145328086742878}
+    m_Modifications:
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6916095124564995607, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_Name
+      value: CandyFlyParticles
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+--- !u!4 &692240091160914258 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+  m_PrefabInstance: {fileID: 3032359926632015220}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &6678842035940639962 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 8549266111818342830, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+  m_PrefabInstance: {fileID: 3032359926632015220}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &9190096654986833501
 PrefabInstance:
   m_ObjectHideFlags: 0
