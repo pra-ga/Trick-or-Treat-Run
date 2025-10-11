@@ -1,6 +1,13 @@
 using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+//TODO: Candy model, collider, delete on collision
+//TODO: Candy particle effects
+//TODO: Points system
 
 public class PlayerController : MonoBehaviour
 {
@@ -24,6 +31,16 @@ public class PlayerController : MonoBehaviour
     [Header("Animation")]
     Animator anim;
 
+    [Header("Candy Magnet")]
+    [SerializeField] Transform candyDetectionRayOrigin;
+    [SerializeField] float magnetRange = 5f; //Raycast distance
+    [SerializeField] string candyTag = "Candy";
+    GameObject currentCandy;
+    public int intCandiesCollected = 0;
+
+    [Header("UI")]
+    [SerializeField] TextMeshProUGUI candyCounterText;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -42,6 +59,12 @@ public class PlayerController : MonoBehaviour
 
         // Helpful debug
         // Debug.Log($"Track: {trackNumber}");
+    }
+
+    void Update()
+    {
+        CandyDetection();
+        UpdateCandyCounter();
     }
 
     public void OnJump()
@@ -91,7 +114,7 @@ public class PlayerController : MonoBehaviour
     IEnumerator ChangeLanesDelay()
     {
         isLaneChanging = true;
-        yield return new WaitForSeconds(0.2f); // keep your delay if needed
+        yield return new WaitForSeconds(0.0f); // keep your delay if needed
         MoveToLane();
         isLaneChanging = false;
     }
@@ -111,5 +134,33 @@ public class PlayerController : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position + sphereOffset, groundCheckRadius);
+
+        //Candy detection
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(candyDetectionRayOrigin.position, Vector3.forward * magnetRange);
     }
+
+    void CandyDetection()
+    {
+        Vector3 rayOrigin = candyDetectionRayOrigin.position;
+        Vector3 rayDirection = Vector3.forward;
+        RaycastHit hit;
+        // Perform the raycast
+        if (Physics.Raycast(rayOrigin, rayDirection, out hit, magnetRange))
+        {
+            // Check if the hit object has the target tag
+            if (hit.collider.CompareTag(candyTag))
+            {
+                Debug.Log("Raycast hit object with tag '" + candyTag + "': " + hit.collider.gameObject.name);
+                currentCandy = hit.collider.gameObject;
+                currentCandy.GetComponent<CollectCandy>().isCollected = true;
+            }
+        }
+    }
+
+
+    void UpdateCandyCounter()
+    {
+        candyCounterText.text = intCandiesCollected.ToString();
+    }  
 }
