@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
 //TODO: Candy model, collider, delete on collision
@@ -11,9 +13,11 @@ using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
+    #region Player Movement
     [Header("Movement")]
     [SerializeField] float speed = 5f;
     [SerializeField] float laneOffset = 2f;
+    float originalSpeed = 0f;
     Rigidbody rb;
     int trackNumber = 3; // 1 = left, 2 = middle, 3 = right
 
@@ -30,22 +34,44 @@ public class PlayerController : MonoBehaviour
 
     [Header("Animation")]
     Animator anim;
+    #endregion
 
     [Header("Candy Magnet")]
     [SerializeField] Transform candyDetectionRayOrigin;
     [SerializeField] float magnetRange = 5f; //Raycast distance
     [SerializeField] string candyTag = "Candy";
+    [SerializeField] GameObject candyCollectionSpehere;
     GameObject currentCandy;
     public int intCandiesCollected = 0;
 
+    [Header("Power Ups")]
+    [SerializeField] int intMagnetMilestone = 20;
+    public bool isMagnetActive = false;
+    [SerializeField] int intSugarRushMilestone = 50;
+    [SerializeField] float sugarRushSpeed = 20f;
+    bool isSugarRushActive = false;
+
     [Header("UI")]
     [SerializeField] TextMeshProUGUI candyCounterText;
+    [SerializeField] TextMeshProUGUI powerUpText;
+
+    #region Post Processing
+    [Header("Post Processing")]
+    [SerializeField] VolumeProfile postProcessingProfile;
+    MotionBlur motionBlur;
+
+
+
+    #endregion
 
     void Start()
     {
         //Time.timeScale = 0.5f; //WARNING: This is a hack
         rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
+        candyCollectionSpehere.SetActive(false);
+        powerUpText.text = "";
+        originalSpeed = speed;
     }
 
     void FixedUpdate()
@@ -58,14 +84,20 @@ public class PlayerController : MonoBehaviour
         Vector3 newPosition = rb.position + transform.forward * speed * Time.fixedDeltaTime;
         rb.MovePosition(newPosition);
 
-        // Helpful debug
-        // Debug.Log($"Track: {trackNumber}");
     }
 
     void Update()
     {
         CandyDetection();
         UpdateCandyCounter();
+        if (intCandiesCollected >= intMagnetMilestone && !isMagnetActive)
+        {
+            StartCoroutine(MagnetPowerUp());
+        }
+        if (intCandiesCollected >= intSugarRushMilestone && !isSugarRushActive)
+        {
+            StartCoroutine(SugarRushPowerUp());
+        }
     }
 
     public void OnJump()
@@ -124,11 +156,15 @@ public class PlayerController : MonoBehaviour
     {
         float newX = (trackNumber - 2) * laneOffset; // lane 1 => -laneOffset, 2 => 0, 3 => +laneOffset
         Vector3 newPos = new Vector3(newX, transform.position.y, transform.position.z);
-        // Instant teleport to lane (if physics interactions are important you can use rb.MovePosition instead)
+        // Method 1: Instant teleport to lane (if physics interactions are important you can use rb.MovePosition instead)
         transform.position = newPos;
-        // If you prefer rigidbody move:
-        // rb.position = newPos;
-        // rb.MovePosition(newPos);
+
+        // Method 2: Use rigidbody move:
+        //rb.position = newPos;
+        //rb.MovePosition(newPos);
+
+        //Method 3: Move toward new position
+
     }
 
     void OnDrawGizmos()
@@ -159,9 +195,42 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
     void UpdateCandyCounter()
     {
         candyCounterText.text = intCandiesCollected.ToString();
-    }  
+    }
+
+    IEnumerator MagnetPowerUp()
+    {
+        isMagnetActive = true;
+        powerUpText.text = "MAGNET";
+        candyCollectionSpehere.SetActive(true);
+        yield return new WaitForSeconds(3.0f);
+        //isMagnetActive = false;
+        powerUpText.text = "";
+        candyCollectionSpehere.SetActive(false);
+    }
+
+    IEnumerator SugarRushPowerUp()
+    {
+        isSugarRushActive = true;
+        powerUpText.text = "SUGAR RUSH";
+        originalSpeed = speed;
+        speed = sugarRushSpeed;
+        yield return new WaitForSeconds(5.0f);
+        //isSugarRushActive = false;
+        powerUpText.text = "";
+        speed = originalSpeed;
+    }
+
+    void EnableMotionBlur(bool enable)
+    {
+        if (motionBlur != null)
+        {
+
+        }
+    }
+
+    
+
 }
