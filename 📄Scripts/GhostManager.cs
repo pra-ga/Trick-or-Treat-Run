@@ -14,7 +14,11 @@ public class GhostManager : MonoBehaviour
     #region Declarations
     [Header("Ghost Animation Params")]
     //[SerializeField] float speed = 5.5f;
-    [SerializeField] float distanceGhostAndPlayer = 5f;
+    public float distanceGhostAndPlayer = 5f;
+    public float originalDistanceGhostAndPlayer;
+    public bool isHit = false;
+    public Animator ghostAnimator;
+    [SerializeField] float distanceReductionRate = 0.1f;
     [SerializeField] GameObject playerObject;
     [SerializeField] Transform followTransform;
     [SerializeField] float delayLaneChange = 0.1f;
@@ -42,21 +46,22 @@ public class GhostManager : MonoBehaviour
         //GhostIdleAnimation();
         GhostHoppingScaleAnimation(0f);
         rb = GetComponent<Rigidbody>();
+        originalDistanceGhostAndPlayer = distanceGhostAndPlayer;
+        ghostAnimator = GetComponentInChildren<Animator>();
     }
 
     void Update()
     {
         GhostHoppingScaleAnimation(Time.time % 1f);
-        MoveForwardConstantly();
+        ReduceDistanceOverTime();
     }
 
     void FixedUpdate()
     {
         DetectChangeInXPosOfPlayer();
-            Vector3 targetPos = new Vector3(transform.position.x, transform.position.y, followTransform.position.z - distanceGhostAndPlayer);
-            rb.MovePosition(targetPos);
+        Vector3 targetPos = new Vector3(transform.position.x, transform.position.y, followTransform.position.z - distanceGhostAndPlayer);
+        rb.MovePosition(targetPos);
     }
-
 
     private void GhostHoppingScaleAnimation(float t)
     {
@@ -99,22 +104,12 @@ public class GhostManager : MonoBehaviour
         );
     } */
 
-    void MoveForwardConstantly()
-    {
-
-        // Move forward continuously
-        //Vector3 newPosition = rb.position + transform.forward * speed * Time.fixedDeltaTime;
-        //rb.MovePosition(newPosition);
-
-        //Maintain distance between ghost and player
-        //Vector3 direction = (playerObject.transform.position - transform.position).normalized;
-    }
 
     void LateUpdate()
     {
-/*         float targetZ = playerObject.transform.position.z - distanceGhostAndPlayer;
-        Vector3 targetPos = new Vector3(transform.position.x, transform.position.y, targetZ);
-        transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 5f); */
+        /*      float targetZ = playerObject.transform.position.z - distanceGhostAndPlayer;
+                Vector3 targetPos = new Vector3(transform.position.x, transform.position.y, targetZ);
+                transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 5f); */
 
         Vector3 ghostPos = transform.position;
         ghostPos.z = followTransform.position.z - distanceGhostAndPlayer;
@@ -129,10 +124,15 @@ public class GhostManager : MonoBehaviour
             StartCoroutine(ChangeXPosAfterDelay(delayLaneChange));
         }
     }
-    
+
     IEnumerator ChangeXPosAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
         transform.position = new Vector3(playerObject.transform.position.x, transform.position.y, transform.position.z);
+    }
+
+    void ReduceDistanceOverTime()
+    {
+        distanceGhostAndPlayer -= distanceReductionRate * Time.deltaTime;
     }
 }

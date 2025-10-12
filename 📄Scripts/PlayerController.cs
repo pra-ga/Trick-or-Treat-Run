@@ -17,6 +17,10 @@ public class PlayerController : MonoBehaviour
     [Header("Movement")]
     [SerializeField] float speed = 5f;
     [SerializeField] float laneOffset = 2f;
+    [SerializeField] GameObject candyBucketPrefab;
+    [SerializeField] Transform candyBucketHand;
+    GameObject candyBucket;
+
     float originalSpeed = 0f;
     Rigidbody rb;
     int trackNumber = 3; // 1 = left, 2 = middle, 3 = right
@@ -33,7 +37,7 @@ public class PlayerController : MonoBehaviour
     bool isLaneChanging = false;
 
     [Header("Animation")]
-    Animator anim;
+    public Animator anim;
     #endregion
 
     [Header("Candy Magnet")]
@@ -60,8 +64,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] VolumeProfile postProcessingProfile;
     MotionBlur motionBlur;
 
-
-
     #endregion
 
     void Start()
@@ -72,6 +74,7 @@ public class PlayerController : MonoBehaviour
         candyCollectionSpehere.SetActive(false);
         powerUpText.text = "";
         originalSpeed = speed;
+        candyBucket = Instantiate(candyBucketPrefab, candyBucketHand.position, Quaternion.identity);
     }
 
     void FixedUpdate()
@@ -88,6 +91,8 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        candyBucket.transform.position = candyBucketHand.position;
+        
         CandyDetection();
         UpdateCandyCounter();
         if (intCandiesCollected >= intMagnetMilestone && !isMagnetActive)
