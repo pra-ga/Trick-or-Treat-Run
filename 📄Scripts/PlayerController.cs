@@ -35,6 +35,7 @@ public class PlayerController : MonoBehaviour
     [Header("Flags")]
     bool isGrounded;
     bool isLaneChanging = false;
+    public bool isDead = false;
 
     [Header("Animation")]
     public Animator anim;
@@ -84,15 +85,19 @@ public class PlayerController : MonoBehaviour
         isGrounded = hitColliders.Length > 0;
 
         // Move forward continuously
-        Vector3 newPosition = rb.position + transform.forward * speed * Time.fixedDeltaTime;
-        rb.MovePosition(newPosition);
+        if (!isDead)
+        {
+            Vector3 newPosition = rb.position + transform.forward * speed * Time.fixedDeltaTime;
+            rb.MovePosition(newPosition);
+        }
+        else rb.linearVelocity = Vector3.zero;
 
     }
 
     void Update()
     {
         candyBucket.transform.position = candyBucketHand.position;
-        
+
         CandyDetection();
         UpdateCandyCounter();
         if (intCandiesCollected >= intMagnetMilestone && !isMagnetActive)
@@ -236,6 +241,22 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Obstacle")
+        {
+            isDead = true;
+            anim.SetTrigger("IsDead");
+        }
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.tag == "Obstacle")
+        {
+            isDead = true;
+            anim.SetTrigger("IsDead");
+        }
+    }
 
 }

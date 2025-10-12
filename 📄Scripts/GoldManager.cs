@@ -10,6 +10,7 @@ public class GoldManager : MonoBehaviour
     [SerializeField] ParticleSystem goldParticle;
     GhostManager ghostManager;
     GameObject player;
+    bool isPlayerHitGold = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -32,9 +33,10 @@ public class GoldManager : MonoBehaviour
         {
             Vector3 forceDirection = ghost.transform.position - transform.position;
             rb.AddForce(forceDirection * goldImpulseForce, ForceMode.Impulse);
+            isPlayerHitGold = true;
         }
 
-        if (other.gameObject.tag == "Ghost")
+        if (other.gameObject.tag == "Ghost" && isPlayerHitGold)
         {
             ghostManager.distanceGhostAndPlayer = ghostManager.originalDistanceGhostAndPlayer;
             player.GetComponent<PlayerController>().anim.SetTrigger("IsThrowing");
