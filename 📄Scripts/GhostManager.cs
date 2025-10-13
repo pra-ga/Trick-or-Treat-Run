@@ -18,6 +18,7 @@ public class GhostManager : MonoBehaviour
     public float originalDistanceGhostAndPlayer;
     public bool isHit = false;
     public Animator ghostAnimator;
+    bool isChangingLane = false;
     [SerializeField] float distanceReductionRate = 0.1f;
     [SerializeField] GameObject playerObject;
     [SerializeField] Transform followTransform;
@@ -38,6 +39,7 @@ public class GhostManager : MonoBehaviour
     Material ghostMaterialOriginal;
     [SerializeField] Material ghostMaterialDisobey;
     Rigidbody rb;
+    PlayerController playerController;
 
     #endregion
 
@@ -48,20 +50,44 @@ public class GhostManager : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         originalDistanceGhostAndPlayer = distanceGhostAndPlayer;
         ghostAnimator = GetComponentInChildren<Animator>();
+        playerController = playerObject.GetComponent<PlayerController>();
     }
 
     void Update()
     {
         GhostHoppingScaleAnimation(Time.time % 1f);
-        ReduceDistanceOverTime();
+        if (playerController.isGameRunning && !playerController.isDead)
+        {
+            ReduceDistanceOverTime();
+        }
+
     }
 
     void FixedUpdate()
     {
+        if (playerController.isGameRunning && !playerController.isDead)
+        {
+            // Gradually reduce distance here instead of Update()
+            distanceGhostAndPlayer -= distanceReductionRate * Time.fixedDeltaTime;
+
+            // Smoothly follow Z position
+            Vector3 targetPos = new Vector3(transform.position.x, transform.position.y, followTransform.position.z - distanceGhostAndPlayer);
+            rb.MovePosition(targetPos);
+
+            // Detect and apply X change
+            if (!isChangingLane && Mathf.Abs(playerObject.transform.position.x - transform.position.x) > 0.01f)
+            {
+                StartCoroutine(ChangeXPosAfterDelay(delayLaneChange));
+            }
+        }
+    }
+
+    /* void FixedUpdate()
+    {
         DetectChangeInXPosOfPlayer();
         Vector3 targetPos = new Vector3(transform.position.x, transform.position.y, followTransform.position.z - distanceGhostAndPlayer);
         rb.MovePosition(targetPos);
-    }
+    } */
 
     private void GhostHoppingScaleAnimation(float t)
     {
@@ -107,32 +133,39 @@ public class GhostManager : MonoBehaviour
 
     void LateUpdate()
     {
-        /*      float targetZ = playerObject.transform.position.z - distanceGhostAndPlayer;
-                Vector3 targetPos = new Vector3(transform.position.x, transform.position.y, targetZ);
-                transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 5f); */
-
-        Vector3 ghostPos = transform.position;
-        ghostPos.z = followTransform.position.z - distanceGhostAndPlayer;
-        //transform.position = ghostPos;
-        //Debug.Log("Distance: " + Vector3.Distance(transform.position, followTransform.position));
-    }
-
-    void DetectChangeInXPosOfPlayer()
-    {
-        if (playerObject.transform.position.x != transform.position.x)
+        if (playerController.isGameRunning && !playerController.isDead)
         {
-            StartCoroutine(ChangeXPosAfterDelay(delayLaneChange));
+            Vector3 ghostPos = transform.position;
+            ghostPos.z = followTransform.position.z - distanceGhostAndPlayer;
+            //transform.position = ghostPos;
+            //Debug.Log("Distance: " + Vector3.Distance(transform.position, followTransform.position));
         }
     }
 
-    IEnumerator ChangeXPosAfterDelay(float delay)
+
+    /* IEnumerator ChangeXPosAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
         transform.position = new Vector3(playerObject.transform.position.x, transform.position.y, transform.position.z);
+    } */
+
+    IEnumerator ChangeXPosAfterDelay(float delay)
+    {
+        isChangingLane = true;
+        yield return new WaitForSeconds(delay);
+
+        // Move via Rigidbody, not transform
+        Vector3 newPos = new Vector3(playerObject.transform.position.x, transform.position.y, transform.position.z);
+        rb.MovePosition(newPos);
+
+        isChangingLane = false;
     }
 
     void ReduceDistanceOverTime()
     {
-        distanceGhostAndPlayer -= distanceReductionRate * Time.deltaTime;
+        if (!playerController.isDead)
+        {
+            distanceGhostAndPlayer -= distanceReductionRate * Time.deltaTime;
+        }
     }
 }

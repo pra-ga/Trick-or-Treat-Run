@@ -29,6 +29,8 @@ public class CollectCandy : MonoBehaviour
 
     void Update()
     {
+        if (playerObject.GetComponent<PlayerController>().isGameRunning == false || playerObject.GetComponent<PlayerController>().isDead) return;
+
         if (isCollected && !isMoving)
         {
             target = candyDetectionRayOrigin.transform;

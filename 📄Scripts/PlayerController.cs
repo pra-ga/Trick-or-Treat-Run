@@ -5,15 +5,26 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
 
-//TODO: Candy model, collider, delete on collision
-//TODO: Candy particle effects
-//TODO: Points system
+//TODO: ✅Candy model, collider, delete on collision
+//TODO: ❌Candy particle effects
+//TODO: ✅Points system
+//TODO: ✅Candy magnet
+//TODO: [Medium] Drone: Picks up the player [High] Flying player
+//TODO: [High] Candy rain
+//TODO: [High] Candy box with lots of candies to collect
+//TODO: [High] Redesign levels with different themes
+//TODO: [High] Create a house scene with TV
+//TODO: [Low] Candies falling from the bucket
 
 public class PlayerController : MonoBehaviour
 {
     #region Player Movement
+    public bool isGameRunning = false;
+
     [Header("Movement")]
     [SerializeField] float speed = 5f;
     [SerializeField] float laneOffset = 2f;
@@ -55,10 +66,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] int intSugarRushMilestone = 50;
     [SerializeField] float sugarRushSpeed = 20f;
     bool isSugarRushActive = false;
+    int intSugarRushCounter = 0;
+    int intMagnetCounter = 0;
+
 
     [Header("UI")]
     [SerializeField] TextMeshProUGUI candyCounterText;
     [SerializeField] TextMeshProUGUI powerUpText;
+    [SerializeField] TextMeshProUGUI magnetCounterText;
+    [SerializeField] TextMeshProUGUI sugarRushCounterText;
+    [SerializeField] TextMeshProUGUI totalCandiesText;
+    [SerializeField] GameObject UIGameOverPanel;
+    [SerializeField] GameObject UIStartPanel;
 
     #region Post Processing
     [Header("Post Processing")]
@@ -76,6 +95,10 @@ public class PlayerController : MonoBehaviour
         powerUpText.text = "";
         originalSpeed = speed;
         candyBucket = Instantiate(candyBucketPrefab, candyBucketHand.position, Quaternion.identity);
+        UIGameOverPanel.SetActive(false);
+        UIStartPanel.SetActive(true);
+        isGameRunning = false;
+        isDead = false;
     }
 
     void FixedUpdate()
@@ -85,7 +108,7 @@ public class PlayerController : MonoBehaviour
         isGrounded = hitColliders.Length > 0;
 
         // Move forward continuously
-        if (!isDead)
+        if (isGameRunning && !isDead)
         {
             Vector3 newPosition = rb.position + transform.forward * speed * Time.fixedDeltaTime;
             rb.MovePosition(newPosition);
@@ -98,16 +121,32 @@ public class PlayerController : MonoBehaviour
     {
         candyBucket.transform.position = candyBucketHand.position;
 
+        if (isDead)
+        {
+            totalCandiesText.text = intCandiesCollected.ToString();
+            magnetCounterText.text = intMagnetCounter.ToString();
+            sugarRushCounterText.text = intSugarRushCounter.ToString();
+            candyCounterText.enabled = false;
+            UIGameOverPanel.SetActive(true);
+        }
+
+        if (!isGameRunning || isDead) return;
+
         CandyDetection();
         UpdateCandyCounter();
+
+
         if (intCandiesCollected >= intMagnetMilestone && !isMagnetActive)
         {
+            intMagnetCounter++;
             StartCoroutine(MagnetPowerUp());
         }
         if (intCandiesCollected >= intSugarRushMilestone && !isSugarRushActive)
         {
+            intSugarRushCounter++;
             StartCoroutine(SugarRushPowerUp());
         }
+
     }
 
     public void OnJump()
@@ -248,15 +287,37 @@ public class PlayerController : MonoBehaviour
             isDead = true;
             anim.SetTrigger("IsDead");
         }
+
+        if (other.gameObject.tag == "Slider")
+        {
+            anim.SetTrigger("IsSliding");
+        }
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.tag == "Obstacle")
+        if (collision.gameObject.tag == "Obstacle" || collision.gameObject.tag == "Ghost")
         {
             isDead = true;
             anim.SetTrigger("IsDead");
         }
+    }
+
+    /* void ReloadSceneCurrentSceneAfterDelay(float delaySeconds)
+    {
+        Invoke("ReloadSceneCurrentScene", delaySeconds);
+    } */
+
+    public void ReloadSceneCurrentScene()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void StartGame()
+    {
+        UIGameOverPanel.SetActive(false);
+        UIStartPanel.SetActive(false);
+        isGameRunning = true;
     }
 
 }

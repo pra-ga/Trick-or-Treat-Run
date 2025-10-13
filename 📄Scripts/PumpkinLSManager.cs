@@ -26,15 +26,6 @@ public class PumpkinLSManager : MonoBehaviour
         StartCoroutine(AutoHopRoutine());
     }
 
-    /* void Update()
-    {
-        if (playerController.isDead)
-        {
-            Debug.Log("Player is dead");
-            StopCoroutine(AutoHopRoutine());
-            rb.linearVelocity = Vector3.zero;
-        }
-    } */
 
     IEnumerator AutoHopRoutine()
     {
@@ -109,6 +100,5 @@ public class PumpkinLSManager : MonoBehaviour
         Vector3 newPos = new Vector3(newX, transform.position.y, transform.position.z);
         rb.MovePosition(newPos);
     }
-    
     
 }
