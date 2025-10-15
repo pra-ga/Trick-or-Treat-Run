@@ -2414,11 +2414,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlatformGenerator
   platformPrefabs:
+  - {fileID: 1881586106263395445, guid: 4ebba8cc1d2736342a01fd405d96b9e3, type: 3}
   - {fileID: 1881586106263395445, guid: 1175946a87c4fdf43aae04898bdad827, type: 3}
+  - {fileID: 1881586106263395445, guid: ecb30e15865ccd3479eeba78ce4c5345, type: 3}
   playerTransform: {fileID: 8798349077423865978}
-  spawnDistance: 50
-  despawnDistance: 70
-  platformLength: 110
+  spawnDistance: 68
+  despawnDistance: 136
+  platformLength: 136
 --- !u!4 &1880573603
 Transform:
   m_ObjectHideFlags: 0
@@ -3431,8 +3433,8 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5218892364959255715}
   serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 1
+  m_Mass: 100
+  m_LinearDamping: 0.3
   m_AngularDamping: 1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
@@ -4429,7 +4431,7 @@ MonoBehaviour:
   laneOffset: 2
   candyBucketPrefab: {fileID: 9178594223177221545, guid: 0eda5a8f5a896524f861f398bb2a2c79, type: 3}
   candyBucketHand: {fileID: 1441676881}
-  jumpForce: 4
+  jumpForce: 300
   groundCheck: {fileID: 2673708582783867467}
   groundLayer:
     serializedVersion: 2

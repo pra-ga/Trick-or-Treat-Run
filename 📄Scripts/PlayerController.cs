@@ -13,12 +13,19 @@ using UnityEngine.UIElements;
 //TODO: ❌Candy particle effects
 //TODO: ✅Points system
 //TODO: ✅Candy magnet
-//TODO: [Medium] Drone: Picks up the player [High] Flying player
-//TODO: [High] Candy rain
-//TODO: [High] Candy box with lots of candies to collect
-//TODO: [High] Redesign levels with different themes
-//TODO: [High] Create a house scene with TV
+//TODO: ✅[Highest] Jump Physics: The jump feels a little "floaty" almost like the character’s bouncing around on the moon 
+//TODO: [Highest] [Level Design] Redesign levels with different themes
+//TODO: [Highest] [Level Design] Create a house scene with TV
+//TODO: [Highest] [Level Design] Lighting.You might want to add some subtle lighting to balance out the mood and guide the player’s eye.
+//TODO: [High] Power up: One idea: players could collect a "magnet" to pull in multiple candies at once this could add a skill-based layer and fun gameplay variety. You could even tie candy collection to extra lives (e.g. collect 1000 candies = +1 life).
+//TODO: [High] Ghost colour: Maybe introduce a progressive color change like a deepening red or a pulsing red glow to signal danger as it gets closer.
+//TODO: [High] [Collectible] Candy box with lots of candies to collect
+//TODO: [Medium] Ghost Design: Is the ghost wearing shades?
+//TODO: [Medium] [Collectible] Drone: Picks up the player 
+//TODO: [Medium] [Collectible] Flying player
+//TODO: [Low] [Collectible] Candy rain
 //TODO: [Low] Candies falling from the bucket
+
 
 public class PlayerController : MonoBehaviour
 {
@@ -138,8 +145,9 @@ public class PlayerController : MonoBehaviour
 
         if (intCandiesCollected >= intMagnetMilestone && !isMagnetActive)
         {
-            intMagnetCounter++;
-            StartCoroutine(MagnetPowerUp());
+            //This is implemented in the magnet powerup Trigger collision event
+            /* intMagnetCounter++;
+            StartCoroutine(MagnetPowerUp()); */
         }
         if (intCandiesCollected >= intSugarRushMilestone && !isSugarRushActive)
         {
@@ -291,6 +299,12 @@ public class PlayerController : MonoBehaviour
         if (other.gameObject.tag == "Slider")
         {
             anim.SetTrigger("IsSliding");
+        }
+
+        if (other.gameObject.tag == "Magnet")
+        {
+            intMagnetCounter++;
+            StartCoroutine(MagnetPowerUp());
         }
     }
 
