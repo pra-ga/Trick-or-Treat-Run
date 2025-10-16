@@ -14,15 +14,16 @@ using UnityEngine.UIElements;
 //TODO: ✅Points system
 //TODO: ✅Candy magnet
 //TODO: ✅[Highest] Jump Physics: The jump feels a little "floaty" almost like the character’s bouncing around on the moon 
-//TODO: [Highest] [Level Design] Redesign levels with different themes
-//TODO: [Highest] [Level Design] Create a house scene with TV
-//TODO: [Highest] [Level Design] Lighting.You might want to add some subtle lighting to balance out the mood and guide the player’s eye.
-//TODO: [High] Power up: One idea: players could collect a "magnet" to pull in multiple candies at once this could add a skill-based layer and fun gameplay variety. You could even tie candy collection to extra lives (e.g. collect 1000 candies = +1 life).
-//TODO: [High] Ghost colour: Maybe introduce a progressive color change like a deepening red or a pulsing red glow to signal danger as it gets closer.
-//TODO: [High] [Collectible] Candy box with lots of candies to collect
+//TODO: ✅[Highest] [Level Design] Redesign levels with different themes
+//TODO: ✅[Highest] [Level Design] Create a house scene with TV
+//TODO: ✅[Highest] Ghost colour: Maybe introduce a progressive color change like a deepening red or a pulsing red glow to signal danger as it gets closer.
+//TODO: ✅[High] Power up: One idea: players could collect a "magnet" to pull in multiple candies at once this could add a skill-based layer and fun gameplay variety. You could even tie candy collection to extra lives (e.g. collect 1000 candies = +1 life).
+//TODO: ✅ [High] Invincibility
+//TODO: [High] [Level Design] Lighting.You might want to add some subtle lighting to balance out the mood and guide the player’s eye.
 //TODO: [Medium] Ghost Design: Is the ghost wearing shades?
-//TODO: [Medium] [Collectible] Drone: Picks up the player 
 //TODO: [Medium] [Collectible] Flying player
+//TODO: [Low] [Collectible] Drone: Picks up the player 
+//TODO: [Low] [Collectible] Candy box with lots of candies to collect
 //TODO: [Low] [Collectible] Candy rain
 //TODO: [Low] Candies falling from the bucket
 
@@ -63,7 +64,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] Transform candyDetectionRayOrigin;
     [SerializeField] float magnetRange = 5f; //Raycast distance
     [SerializeField] string candyTag = "Candy";
-    [SerializeField] GameObject candyCollectionSpehere;
+    //[SerializeField] GameObject candyCollectionSpehere;
     GameObject currentCandy;
     public int intCandiesCollected = 0;
 
@@ -75,6 +76,21 @@ public class PlayerController : MonoBehaviour
     bool isSugarRushActive = false;
     int intSugarRushCounter = 0;
     int intMagnetCounter = 0;
+    [SerializeField] float magnetRadius = 5f;
+    [SerializeField] float pullSpeed = 20f;
+    bool isInvincible = false;
+
+    [Header("Hearts")]
+    [SerializeField] int heartsCollected = 0;
+    [SerializeField] int intHeartsMilestone = 30;
+    public int intCandiesForHeart = 0;
+    
+
+    [Header("Jet pack")]
+    [SerializeField] GameObject jetPack;
+    [SerializeField] float jetPackSpeed = 20f;
+    public bool isJetPackActive = false;
+    [SerializeField] ParticleSystem jetPackParticles;
 
 
     [Header("UI")]
@@ -83,6 +99,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] TextMeshProUGUI magnetCounterText;
     [SerializeField] TextMeshProUGUI sugarRushCounterText;
     [SerializeField] TextMeshProUGUI totalCandiesText;
+    [SerializeField] TextMeshProUGUI heartsCollectedText;
     [SerializeField] GameObject UIGameOverPanel;
     [SerializeField] GameObject UIStartPanel;
 
@@ -98,7 +115,7 @@ public class PlayerController : MonoBehaviour
         //Time.timeScale = 0.5f; //WARNING: This is a hack
         rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
-        candyCollectionSpehere.SetActive(false);
+        //candyCollectionSpehere.SetActive(false);
         powerUpText.text = "";
         originalSpeed = speed;
         candyBucket = Instantiate(candyBucketPrefab, candyBucketHand.position, Quaternion.identity);
@@ -106,6 +123,7 @@ public class PlayerController : MonoBehaviour
         UIStartPanel.SetActive(true);
         isGameRunning = false;
         isDead = false;
+        jetPack.SetActive(false);
     }
 
     void FixedUpdate()
@@ -126,8 +144,15 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        //Place bucket in player's hand
         candyBucket.transform.position = candyBucketHand.position;
 
+        //Start magnet powerup only after picking up magnet
+        if (isMagnetActive) StartCoroutine(MagnetPowerUp());
+
+        if (isJetPackActive) StartCoroutine(JetPackFlight());
+
+        //Update text on the end screen
         if (isDead)
         {
             totalCandiesText.text = intCandiesCollected.ToString();
@@ -142,6 +167,19 @@ public class PlayerController : MonoBehaviour
         CandyDetection();
         UpdateCandyCounter();
 
+        if (intCandiesCollected >= intHeartsMilestone)
+        {
+            heartsCollected++;
+            intCandiesForHeart = 0;
+            heartsCollectedText.text = heartsCollected.ToString();
+
+            switch (heartsCollected)
+            {
+                case 0: intHeartsMilestone = 30;    break;
+                case 1: intHeartsMilestone = 60;    break;
+                case 2: intHeartsMilestone = 90;    break;
+            }
+        }
 
         if (intCandiesCollected >= intMagnetMilestone && !isMagnetActive)
         {
@@ -149,11 +187,14 @@ public class PlayerController : MonoBehaviour
             /* intMagnetCounter++;
             StartCoroutine(MagnetPowerUp()); */
         }
+
         if (intCandiesCollected >= intSugarRushMilestone && !isSugarRushActive)
         {
             intSugarRushCounter++;
             StartCoroutine(SugarRushPowerUp());
         }
+
+        if(isInvincible) StartCoroutine(InvincibilityRoutine());
 
     }
 
@@ -232,6 +273,9 @@ public class PlayerController : MonoBehaviour
         //Candy detection
         Gizmos.color = Color.red;
         Gizmos.DrawRay(candyDetectionRayOrigin.position, Vector3.forward * magnetRange);
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, magnetRadius);
     }
 
     void CandyDetection()
@@ -261,11 +305,41 @@ public class PlayerController : MonoBehaviour
     {
         isMagnetActive = true;
         powerUpText.text = "MAGNET";
-        candyCollectionSpehere.SetActive(true);
-        yield return new WaitForSeconds(3.0f);
-        //isMagnetActive = false;
+        //candyCollectionSpehere.SetActive(true);
+
+        float duration = 3f;
+        float startTime = Time.time;
+
+        // Cache the candies at activation time (optional, or re-scan each frame)
+        Collider[] initialCandies = Physics.OverlapSphere(transform.position, magnetRadius);
+
+        while (Time.time < startTime + duration)
+        {
+            foreach (Collider col in initialCandies)
+            {
+                if (col != null && col.CompareTag(candyTag))
+                {
+                    GameObject candy = col.gameObject;
+
+                    /* // Compute progress (0 → 1)
+                    float t = (Time.time - startTime) / duration;
+                    // Apply easing for smooth start & end
+                    float easedT = Mathf.SmoothStep(0f, 1f, t);
+
+                    // Lerp the candy toward the player
+                    Vector3 targetPos = transform.position;
+                    candy.position = Vector3.Lerp(candy.position, targetPos, easedT * Time.deltaTime * pullSpeed); */
+
+                    candy.GetComponent<CollectCandy>().isCollected = true;
+                }
+            }
+
+            yield return null; // Wait for the next frame
+        }
+
+        isMagnetActive = false;
         powerUpText.text = "";
-        candyCollectionSpehere.SetActive(false);
+        //candyCollectionSpehere.SetActive(false);
     }
 
     IEnumerator SugarRushPowerUp()
@@ -290,7 +364,7 @@ public class PlayerController : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.tag == "Obstacle")
+        if (other.gameObject.tag == "Obstacle" && !isInvincible)
         {
             isDead = true;
             anim.SetTrigger("IsDead");
@@ -303,14 +377,29 @@ public class PlayerController : MonoBehaviour
 
         if (other.gameObject.tag == "Magnet")
         {
+            if (isMagnetActive) return;
+            isMagnetActive = true;
             intMagnetCounter++;
-            StartCoroutine(MagnetPowerUp());
+        }
+
+        if (other.gameObject.tag == "Jetpack")
+        {
+            isJetPackActive = true;
+            jetPack.SetActive(true);
+            Destroy(other.gameObject);
+        }
+
+        if (other.gameObject.tag == "Invincible")
+        {
+            isInvincible = true;
+            StartCoroutine(InvincibilityRoutine());
+            Destroy(other.gameObject);
         }
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.tag == "Obstacle" || collision.gameObject.tag == "Ghost")
+        if ((collision.gameObject.tag == "Obstacle" || collision.gameObject.tag == "Ghost") && !isInvincible)
         {
             isDead = true;
             anim.SetTrigger("IsDead");
@@ -334,4 +423,28 @@ public class PlayerController : MonoBehaviour
         isGameRunning = true;
     }
 
+    IEnumerator JetPackFlight()
+    {
+        if (isGrounded)
+        {
+            rb.AddForce(new Vector3(0, 1, 0) * jetPackSpeed, ForceMode.Impulse);
+            anim.SetTrigger("IsJumping");
+            jetPackParticles.Play();
+            yield return new WaitForSeconds(1f);
+            isJetPackActive = false;
+            jetPack.SetActive(false);
+            jetPackParticles.Stop();
+        }
+    }
+
+    IEnumerator InvincibilityRoutine()
+    {
+        powerUpText.text = "INVINCIBILITY";
+        originalSpeed = speed;
+        speed = sugarRushSpeed;
+        yield return new WaitForSeconds(3f);
+        isInvincible = false;
+        powerUpText.text = "";
+        speed = originalSpeed;
+    }
 }

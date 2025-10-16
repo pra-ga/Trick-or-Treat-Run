@@ -27,17 +27,18 @@ public class GhostManager : MonoBehaviour
     [SerializeField] float hopDuration = 0.5f;     // time to complete the hop
     [SerializeField] float waitDuration = 0.5f;    // wait on tile after hop
     [SerializeField] float hopHeight = 0.5f;       // max jump height
-    float xMinScale = 0.8f; float xMaxScale = 1.0f;
-    float zMinScale = 0.8f; float zMaxScale = 1.0f;
-    float yMinPos = 0.0f; float yMaxPos = 0.4f;
     [SerializeField] float hoppingSquishScale = 0.8f;
     [SerializeField] float hoppingStretchScale = 1.0f;
     [SerializeField] float shakeMagnitude = 0.1f;  // how much it shakes before exploding
     [SerializeField] float inflateScale = 3f;      // how big it gets before destroying
-    Vector3 originalScale;
     [SerializeField] float ghostMoveSpeed = 1f;
-    Material ghostMaterialOriginal;
+    [SerializeField] Material ghostMaterial;
     [SerializeField] Material ghostMaterialDisobey;
+    [Header("Ghost colour change")]
+    [SerializeField] Renderer ghostRenderer;
+    [SerializeField] float maxDistanceGhostAndPlayer = 5f;
+    [SerializeField] float minDistanceGhostAndPlayer = 0f;
+
     Rigidbody rb;
     PlayerController playerController;
 
@@ -51,12 +52,15 @@ public class GhostManager : MonoBehaviour
         originalDistanceGhostAndPlayer = distanceGhostAndPlayer;
         ghostAnimator = GetComponentInChildren<Animator>();
         playerController = playerObject.GetComponent<PlayerController>();
+        maxDistanceGhostAndPlayer = distanceGhostAndPlayer;
     }
 
     void Update()
     {
         GhostHoppingScaleAnimation(Time.time % 1f);
-        if (playerController.isGameRunning && !playerController.isDead)
+        if (playerController.isGameRunning 
+        && !playerController.isDead 
+        && !playerController.isJetPackActive)
         {
             ReduceDistanceOverTime();
         }
@@ -166,6 +170,14 @@ public class GhostManager : MonoBehaviour
         if (!playerController.isDead)
         {
             distanceGhostAndPlayer -= distanceReductionRate * Time.deltaTime;
+            ChangeGhostColourOverDistance(distanceGhostAndPlayer);
         }
+    }
+
+    void ChangeGhostColourOverDistance(float _distanceGhostAndPlayer)
+    {
+        float t = Mathf.InverseLerp(minDistanceGhostAndPlayer, maxDistanceGhostAndPlayer, _distanceGhostAndPlayer);
+        Color newColor = Color.Lerp(Color.red, Color.white, t);
+        ghostRenderer.material.color = newColor;
     }
 }

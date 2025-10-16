@@ -23,7 +23,6 @@ public class CollectCandy : MonoBehaviour
         playerObject = GameObject.FindWithTag("Player");
         Transform childTransform = playerObject.transform.Find("candyDetectionRayOrigin");
         candyDetectionRayOrigin = childTransform.gameObject;
-        Debug.Log("candyDetectionRayOrigin: " + candyDetectionRayOrigin.name);
     }
 
 
@@ -63,6 +62,7 @@ public class CollectCandy : MonoBehaviour
         transform.position = target.position;
         isMoving = false;
         playerObject.GetComponent<PlayerController>().intCandiesCollected++;
+        playerObject.GetComponent<PlayerController>().intCandiesForHeart++;
         //collectCandyParticles.Stop();
         Destroy(gameObject);
     }

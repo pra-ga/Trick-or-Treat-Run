@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6053910095596170510}
   - component: {fileID: 8319162838294068145}
   - component: {fileID: 5263467284585386717}
+  - component: {fileID: 1241156338920172951}
   m_Layer: 0
   m_Name: CandyA
   m_TagString: Candy
@@ -87,7 +88,33 @@ MonoBehaviour:
   target: {fileID: 0}
   duration: 0.5
   stepSize: 1
-  collectCandyParticles: {fileID: 6678842035940639962}
+--- !u!54 &1241156338920172951
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5649318566178080798}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &3032359926632015220
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -148,11 +175,6 @@ PrefabInstance:
 --- !u!4 &692240091160914258 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2562073166720125990, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
-  m_PrefabInstance: {fileID: 3032359926632015220}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &6678842035940639962 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 8549266111818342830, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
   m_PrefabInstance: {fileID: 3032359926632015220}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &9190096654986833501
