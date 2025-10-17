@@ -21,7 +21,9 @@ using UnityEngine.UIElements;
 //TODO: ✅ [High] Invincibility
 //TODO: [High] [Level Design] Lighting.You might want to add some subtle lighting to balance out the mood and guide the player’s eye.
 //TODO: [Medium] Ghost Design: Is the ghost wearing shades?
-//TODO: [Medium] [Collectible] Flying player
+//TODO: ✅[Medium] [Collectible] Flying player
+//🐞BUG:✅ Player should stop sliding when not in collision with rib
+//🐞BUG: Magnet effect flickering
 //TODO: [Low] [Collectible] Drone: Picks up the player 
 //TODO: [Low] [Collectible] Candy box with lots of candies to collect
 //TODO: [Low] [Collectible] Candy rain
@@ -71,6 +73,7 @@ public class PlayerController : MonoBehaviour
     [Header("Power Ups")]
     [SerializeField] int intMagnetMilestone = 20;
     public bool isMagnetActive = false;
+    [SerializeField] GameObject magnetParticles;
     [SerializeField] int intSugarRushMilestone = 50;
     [SerializeField] float sugarRushSpeed = 20f;
     bool isSugarRushActive = false;
@@ -79,12 +82,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float magnetRadius = 5f;
     [SerializeField] float pullSpeed = 20f;
     bool isInvincible = false;
+    [SerializeField] GameObject invincibleParticles;
 
     [Header("Hearts")]
     [SerializeField] int heartsCollected = 0;
-    [SerializeField] int intHeartsMilestone = 30;
+    [SerializeField] int intCandiesTarget = 10;
+    [SerializeField] int targetMultiplier = 1;
     public int intCandiesForHeart = 0;
-    
+
 
     [Header("Jet pack")]
     [SerializeField] GameObject jetPack;
@@ -102,6 +107,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] TextMeshProUGUI heartsCollectedText;
     [SerializeField] GameObject UIGameOverPanel;
     [SerializeField] GameObject UIStartPanel;
+    [SerializeField] UnityEngine.UI.Image progressBarImage;
+    [Range(0f, 1f)][SerializeField] float currentProgress = 0f;
 
     #region Post Processing
     [Header("Post Processing")]
@@ -109,6 +116,8 @@ public class PlayerController : MonoBehaviour
     MotionBlur motionBlur;
 
     #endregion
+
+
 
     void Start()
     {
@@ -124,10 +133,14 @@ public class PlayerController : MonoBehaviour
         isGameRunning = false;
         isDead = false;
         jetPack.SetActive(false);
+        invincibleParticles.SetActive(false);
+        magnetParticles.SetActive(false);
+        UpdateProgressBar(currentProgress);
     }
 
     void FixedUpdate()
     {
+        //Check if player is on ground
         Vector3 sphereCenter = transform.position + sphereOffset;
         Collider[] hitColliders = Physics.OverlapSphere(sphereCenter, groundCheckRadius, groundLayer);
         isGrounded = hitColliders.Length > 0;
@@ -147,10 +160,14 @@ public class PlayerController : MonoBehaviour
         //Place bucket in player's hand
         candyBucket.transform.position = candyBucketHand.position;
 
-        //Start magnet powerup only after picking up magnet
-        if (isMagnetActive) StartCoroutine(MagnetPowerUp());
-
-        if (isJetPackActive) StartCoroutine(JetPackFlight());
+        if (!isDead)
+        {
+            if (isMagnetActive) StartCoroutine(MagnetPowerUp());
+            if (isJetPackActive) StartCoroutine(JetPackFlight());
+            CandyDetection();
+            UpdateCandyCounter();
+            CandiesToHearts();
+        }
 
         //Update text on the end screen
         if (isDead)
@@ -160,26 +177,13 @@ public class PlayerController : MonoBehaviour
             sugarRushCounterText.text = intSugarRushCounter.ToString();
             candyCounterText.enabled = false;
             UIGameOverPanel.SetActive(true);
+            magnetParticles.SetActive(false);
+            invincibleParticles.SetActive(false);
         }
 
         if (!isGameRunning || isDead) return;
 
-        CandyDetection();
-        UpdateCandyCounter();
 
-        if (intCandiesCollected >= intHeartsMilestone)
-        {
-            heartsCollected++;
-            intCandiesForHeart = 0;
-            heartsCollectedText.text = heartsCollected.ToString();
-
-            switch (heartsCollected)
-            {
-                case 0: intHeartsMilestone = 30;    break;
-                case 1: intHeartsMilestone = 60;    break;
-                case 2: intHeartsMilestone = 90;    break;
-            }
-        }
 
         if (intCandiesCollected >= intMagnetMilestone && !isMagnetActive)
         {
@@ -188,13 +192,17 @@ public class PlayerController : MonoBehaviour
             StartCoroutine(MagnetPowerUp()); */
         }
 
-        if (intCandiesCollected >= intSugarRushMilestone && !isSugarRushActive)
+        if (intCandiesCollected >= intSugarRushMilestone && !isSugarRushActive && !isDead)
         {
             intSugarRushCounter++;
-            StartCoroutine(SugarRushPowerUp());
+            //StartCoroutine(SugarRushPowerUp());
         }
 
-        if(isInvincible) StartCoroutine(InvincibilityRoutine());
+        if (isInvincible && !isDead) StartCoroutine(InvincibilityRoutine());
+
+        currentProgress = (float)intCandiesForHeart / intCandiesTarget;
+        currentProgress = Mathf.Clamp01(currentProgress); // Keep between 0 and 1
+        UpdateProgressBar(currentProgress);
 
     }
 
@@ -315,6 +323,7 @@ public class PlayerController : MonoBehaviour
 
         while (Time.time < startTime + duration)
         {
+            magnetParticles.SetActive(true);
             foreach (Collider col in initialCandies)
             {
                 if (col != null && col.CompareTag(candyTag))
@@ -340,6 +349,7 @@ public class PlayerController : MonoBehaviour
         isMagnetActive = false;
         powerUpText.text = "";
         //candyCollectionSpehere.SetActive(false);
+        magnetParticles.SetActive(false);
     }
 
     IEnumerator SugarRushPowerUp()
@@ -366,8 +376,13 @@ public class PlayerController : MonoBehaviour
     {
         if (other.gameObject.tag == "Obstacle" && !isInvincible)
         {
-            isDead = true;
-            anim.SetTrigger("IsDead");
+            if (heartsCollected <= 0)
+            {
+                Debug.Log("Dead");
+                isDead = true;
+                anim.SetTrigger("IsDead");
+            }
+            else if (heartsCollected > 0) heartsCollected--;
         }
 
         if (other.gameObject.tag == "Slider")
@@ -380,6 +395,7 @@ public class PlayerController : MonoBehaviour
             if (isMagnetActive) return;
             isMagnetActive = true;
             intMagnetCounter++;
+            Destroy(other.gameObject);
         }
 
         if (other.gameObject.tag == "Jetpack")
@@ -397,12 +413,24 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.tag == "Slider")
+        {
+            anim.CrossFade("Running_A", 0.1f);
+        }
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         if ((collision.gameObject.tag == "Obstacle" || collision.gameObject.tag == "Ghost") && !isInvincible)
         {
-            isDead = true;
-            anim.SetTrigger("IsDead");
+            if (heartsCollected <= 0)
+            {
+                isDead = true;
+                anim.SetTrigger("IsDead");
+            }
+            else if (heartsCollected > 0) heartsCollected--;
         }
     }
 
@@ -440,11 +468,36 @@ public class PlayerController : MonoBehaviour
     IEnumerator InvincibilityRoutine()
     {
         powerUpText.text = "INVINCIBILITY";
+        invincibleParticles.SetActive(true);
         originalSpeed = speed;
-        speed = sugarRushSpeed;
+        //speed = sugarRushSpeed;
         yield return new WaitForSeconds(3f);
         isInvincible = false;
         powerUpText.text = "";
         speed = originalSpeed;
+        invincibleParticles.SetActive(false);
     }
+
+    void CandiesToHearts()
+    {
+        heartsCollectedText.text = heartsCollected.ToString();
+
+        if (intCandiesForHeart >= intCandiesTarget)
+        {
+            //Reset candies count 
+            intCandiesForHeart = 0;
+            intCandiesTarget = Mathf.CeilToInt(intCandiesTarget * targetMultiplier);
+            heartsCollected++;
+        }
+
+    }
+
+    void UpdateProgressBar(float progress)
+    {
+        if (progressBarImage != null)
+        {
+            progressBarImage.fillAmount = progress;
+        }
+    }
+
 }
