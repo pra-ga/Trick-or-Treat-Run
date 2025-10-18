@@ -33,6 +33,7 @@ public class CollectCandy : MonoBehaviour
         if (isCollected && !isMoving)
         {
             target = candyDetectionRayOrigin.transform;
+            //Debug.Log("Target: " + target.name);
             startPosition = transform.position;
             StartCoroutine(MoveToTargetSmooth());
             //collectCandyParticles.Play();

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -60,6 +61,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Animation")]
     public Animator anim;
+    [SerializeField] ParticleSystem PlayerHitParticles;
     #endregion
 
     [Header("Candy Magnet")]
@@ -69,6 +71,8 @@ public class PlayerController : MonoBehaviour
     //[SerializeField] GameObject candyCollectionSpehere;
     GameObject currentCandy;
     public int intCandiesCollected = 0;
+    Coroutine magnetCoroutine = null;
+    bool magnetCoroutineRunning = false;
 
     [Header("Power Ups")]
     [SerializeField] int intMagnetMilestone = 20;
@@ -77,8 +81,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] int intSugarRushMilestone = 50;
     [SerializeField] float sugarRushSpeed = 20f;
     bool isSugarRushActive = false;
-    int intSugarRushCounter = 0;
+    int intInvincibilityCounter = 0;
     int intMagnetCounter = 0;
+    int intSliderCounter = 0, intJetPackCounter = 0;
     [SerializeField] float magnetRadius = 5f;
     [SerializeField] float pullSpeed = 20f;
     bool isInvincible = false;
@@ -102,13 +107,22 @@ public class PlayerController : MonoBehaviour
     [SerializeField] TextMeshProUGUI candyCounterText;
     [SerializeField] TextMeshProUGUI powerUpText;
     [SerializeField] TextMeshProUGUI magnetCounterText;
-    [SerializeField] TextMeshProUGUI sugarRushCounterText;
+    [SerializeField] TextMeshProUGUI invincibilityCounterText;
+    [SerializeField] TextMeshProUGUI jetPackCounterText;
+    [SerializeField] TextMeshProUGUI sliderCounterText;
     [SerializeField] TextMeshProUGUI totalCandiesText;
     [SerializeField] TextMeshProUGUI heartsCollectedText;
     [SerializeField] GameObject UIGameOverPanel;
     [SerializeField] GameObject UIStartPanel;
     [SerializeField] UnityEngine.UI.Image progressBarImage;
     [Range(0f, 1f)][SerializeField] float currentProgress = 0f;
+
+    [Header("Effects")]
+    [SerializeField] GameObject brokenHeartGO;
+    [SerializeField] private float effectfloatHeight = 1.5f; // how high to rise
+    [SerializeField] private float effectfloatDuration = 1.0f; // how long before destroy
+    [SerializeField] private AnimationCurve floatCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] Transform effectInstantiatePoint;
 
     #region Post Processing
     [Header("Post Processing")]
@@ -124,6 +138,7 @@ public class PlayerController : MonoBehaviour
         //Time.timeScale = 0.5f; //WARNING: This is a hack
         rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
+        anim.SetBool("IsIdle", true);
         //candyCollectionSpehere.SetActive(false);
         powerUpText.text = "";
         originalSpeed = speed;
@@ -134,7 +149,7 @@ public class PlayerController : MonoBehaviour
         isDead = false;
         jetPack.SetActive(false);
         invincibleParticles.SetActive(false);
-        magnetParticles.SetActive(false);
+        //magnetParticles.SetActive(false);
         UpdateProgressBar(currentProgress);
     }
 
@@ -162,7 +177,11 @@ public class PlayerController : MonoBehaviour
 
         if (!isDead)
         {
-            if (isMagnetActive) StartCoroutine(MagnetPowerUp());
+            if (isMagnetActive && !magnetCoroutineRunning)
+            {
+                StartCoroutine(MagnetPowerUp());
+            }
+
             if (isJetPackActive) StartCoroutine(JetPackFlight());
             CandyDetection();
             UpdateCandyCounter();
@@ -172,13 +191,7 @@ public class PlayerController : MonoBehaviour
         //Update text on the end screen
         if (isDead)
         {
-            totalCandiesText.text = intCandiesCollected.ToString();
-            magnetCounterText.text = intMagnetCounter.ToString();
-            sugarRushCounterText.text = intSugarRushCounter.ToString();
-            candyCounterText.enabled = false;
-            UIGameOverPanel.SetActive(true);
-            magnetParticles.SetActive(false);
-            invincibleParticles.SetActive(false);
+            StartCoroutine(ActionsWhenDead(2f));
         }
 
         if (!isGameRunning || isDead) return;
@@ -194,7 +207,7 @@ public class PlayerController : MonoBehaviour
 
         if (intCandiesCollected >= intSugarRushMilestone && !isSugarRushActive && !isDead)
         {
-            intSugarRushCounter++;
+            
             //StartCoroutine(SugarRushPowerUp());
         }
 
@@ -204,6 +217,21 @@ public class PlayerController : MonoBehaviour
         currentProgress = Mathf.Clamp01(currentProgress); // Keep between 0 and 1
         UpdateProgressBar(currentProgress);
 
+    }
+
+    IEnumerator ActionsWhenDead(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        heartsCollectedText.text = heartsCollected.ToString();
+        totalCandiesText.text = intCandiesCollected.ToString();
+        magnetCounterText.text = intMagnetCounter.ToString();
+        invincibilityCounterText.text = intInvincibilityCounter.ToString();
+        jetPackCounterText.text = intJetPackCounter.ToString();
+        sliderCounterText.text = intSliderCounter.ToString();
+        candyCounterText.enabled = false;
+        UIGameOverPanel.SetActive(true);
+        magnetParticles.SetActive(false);
+        invincibleParticles.SetActive(false);
     }
 
     public void OnJump()
@@ -311,46 +339,75 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator MagnetPowerUp()
     {
+        magnetCoroutineRunning = true;
+
         isMagnetActive = true;
         powerUpText.text = "MAGNET";
-        //candyCollectionSpehere.SetActive(true);
+        magnetParticles.SetActive(true);
 
         float duration = 3f;
         float startTime = Time.time;
 
-        // Cache the candies at activation time (optional, or re-scan each frame)
-        Collider[] initialCandies = Physics.OverlapSphere(transform.position, magnetRadius);
+
 
         while (Time.time < startTime + duration)
         {
-            magnetParticles.SetActive(true);
+            Collider[] initialCandies = Physics.OverlapSphere(transform.position, magnetRadius);
             foreach (Collider col in initialCandies)
             {
                 if (col != null && col.CompareTag(candyTag))
                 {
-                    GameObject candy = col.gameObject;
-
-                    /* // Compute progress (0 → 1)
-                    float t = (Time.time - startTime) / duration;
-                    // Apply easing for smooth start & end
-                    float easedT = Mathf.SmoothStep(0f, 1f, t);
-
-                    // Lerp the candy toward the player
-                    Vector3 targetPos = transform.position;
-                    candy.position = Vector3.Lerp(candy.position, targetPos, easedT * Time.deltaTime * pullSpeed); */
-
-                    candy.GetComponent<CollectCandy>().isCollected = true;
+                    var candy = col.GetComponent<CollectCandy>();
+                    if (candy != null)
+                        candy.isCollected = true;
                 }
             }
 
-            yield return null; // Wait for the next frame
+            yield return null;
         }
 
         isMagnetActive = false;
         powerUpText.text = "";
-        //candyCollectionSpehere.SetActive(false);
         magnetParticles.SetActive(false);
+        magnetCoroutineRunning = false;
     }
+
+    /* IEnumerator MagnetPowerUp()
+    {
+        //if (isMagnetActive) yield break; // prevent overlapping magnets
+
+        isMagnetActive = true;
+        powerUpText.text = "MAGNET";
+
+        float duration = 3f;
+        float startTime = Time.time;
+
+        // Spawn particle effect once
+        GameObject _magnetParticles = Instantiate(magnetParticles, transform.position, transform.rotation, transform);
+
+        // Cache candies if desired
+        Collider[] initialCandies = Physics.OverlapSphere(transform.position, magnetRadius);
+
+        while (Time.time < startTime + duration)
+        {
+            foreach (Collider col in initialCandies)
+            {
+                if (col != null && col.CompareTag(candyTag))
+                {
+                    var candy = col.GetComponent<CollectCandy>();
+                    if (candy != null)
+                        candy.isCollected = true;
+                }
+            }
+
+            yield return null;
+        }
+
+        isMagnetActive = false;
+        powerUpText.text = "";
+        Destroy(_magnetParticles);
+    } */
+
 
     IEnumerator SugarRushPowerUp()
     {
@@ -376,24 +433,31 @@ public class PlayerController : MonoBehaviour
     {
         if (other.gameObject.tag == "Obstacle" && !isInvincible)
         {
+            PlayerHitParticles.Play();
             if (heartsCollected <= 0)
             {
                 Debug.Log("Dead");
                 isDead = true;
                 anim.SetTrigger("IsDead");
             }
-            else if (heartsCollected > 0) heartsCollected--;
+            else if (heartsCollected > 0)
+            {
+                StartCoroutine(MoveUpAndDestroy(brokenHeartGO));
+                heartsCollected--;
+            }
         }
 
         if (other.gameObject.tag == "Slider")
         {
             anim.SetTrigger("IsSliding");
+            intSliderCounter++;
         }
 
         if (other.gameObject.tag == "Magnet")
         {
             if (isMagnetActive) return;
             isMagnetActive = true;
+            //StartCoroutine(MagnetPowerUp());
             intMagnetCounter++;
             Destroy(other.gameObject);
         }
@@ -403,6 +467,7 @@ public class PlayerController : MonoBehaviour
             isJetPackActive = true;
             jetPack.SetActive(true);
             Destroy(other.gameObject);
+            intJetPackCounter++;
         }
 
         if (other.gameObject.tag == "Invincible")
@@ -410,6 +475,7 @@ public class PlayerController : MonoBehaviour
             isInvincible = true;
             StartCoroutine(InvincibilityRoutine());
             Destroy(other.gameObject);
+            intInvincibilityCounter++;
         }
     }
 
@@ -425,12 +491,17 @@ public class PlayerController : MonoBehaviour
     {
         if ((collision.gameObject.tag == "Obstacle" || collision.gameObject.tag == "Ghost") && !isInvincible)
         {
+            PlayerHitParticles.Play();
             if (heartsCollected <= 0)
             {
                 isDead = true;
                 anim.SetTrigger("IsDead");
             }
-            else if (heartsCollected > 0) heartsCollected--;
+            else if (heartsCollected > 0)
+            {
+                heartsCollected--;
+                StartCoroutine(MoveUpAndDestroy(brokenHeartGO));
+            }
         }
     }
 
@@ -446,6 +517,7 @@ public class PlayerController : MonoBehaviour
 
     public void StartGame()
     {
+        anim.SetBool("IsIdle", false);
         UIGameOverPanel.SetActive(false);
         UIStartPanel.SetActive(false);
         isGameRunning = true;
@@ -455,7 +527,7 @@ public class PlayerController : MonoBehaviour
     {
         if (isGrounded)
         {
-            rb.AddForce(new Vector3(0, 1, 0) * jetPackSpeed, ForceMode.Impulse);
+            rb.AddForce(new Vector3(0, 1, 0) * jetPackSpeed * Time.fixedDeltaTime, ForceMode.Impulse);
             anim.SetTrigger("IsJumping");
             jetPackParticles.Play();
             yield return new WaitForSeconds(1f);
@@ -467,15 +539,16 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator InvincibilityRoutine()
     {
+        //GameObject _invincibleParticles = Instantiate(invincibleParticles, transform.position, transform.rotation);
+        //_invincibleParticles.transform.parent = transform;
+
         powerUpText.text = "INVINCIBILITY";
         invincibleParticles.SetActive(true);
-        originalSpeed = speed;
-        //speed = sugarRushSpeed;
         yield return new WaitForSeconds(3f);
         isInvincible = false;
         powerUpText.text = "";
-        speed = originalSpeed;
         invincibleParticles.SetActive(false);
+        //Destroy(_invincibleParticles);
     }
 
     void CandiesToHearts()
@@ -500,4 +573,31 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
+    
+    IEnumerator MoveUpAndDestroy(GameObject obj)
+    {
+        if (obj == null) yield break;
+
+        GameObject _obj = Instantiate(obj, effectInstantiatePoint.position, quaternion.identity, transform);
+        //_obj.transform.SetParent(transform, true);
+
+        
+        float elapsed = 0f;
+
+        while (elapsed < effectfloatDuration)
+        {
+            Vector3 endPos = _obj.transform.position + Vector3.up * effectfloatDuration;
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / effectfloatDuration);
+
+            // Smooth rise using the animation curve
+            float curveT = floatCurve.Evaluate(t);
+            _obj.transform.position = Vector3.Lerp(_obj.transform.position, endPos, curveT);
+
+            yield return null;
+        }
+
+        Destroy(_obj);
+    }
 }

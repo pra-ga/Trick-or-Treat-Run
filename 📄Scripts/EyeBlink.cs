@@ -1,36 +1,49 @@
 using UnityEngine;
 using System.Collections;
 
-public class EyeBlink : MonoBehaviour
+public class EyeController : MonoBehaviour
 {
-    [SerializeField] private Transform leftEye;   // assign in inspector
-    [SerializeField] private Transform rightEye;  // assign in inspector
+    [Header("Eye Transforms")]
+    [SerializeField] private Transform leftEye;
+    [SerializeField] private Transform rightEye;
+    [SerializeField] private Transform leftEyeBall;
+    [SerializeField] private Transform rightEyeBall;
 
+    [Header("Blink Settings")]
     [SerializeField] private float openZScale = 0.08f;
     [SerializeField] private float closedZScale = 0f;
-    [SerializeField] private float blinkDuration = 0.1f; // time to close/open
-    [SerializeField] private Vector2 blinkIntervalRange = new Vector2(2f, 5f); // random wait between blinks
+    [SerializeField] private float blinkDuration = 0.1f;
+    [SerializeField] private Vector2 blinkIntervalRange = new Vector2(2f, 5f);
+
+    [Header("Eye Movement Settings")]
+    [SerializeField] private float eyeMoveRadius = 0.03f; // how far eyes can move from center
+    [SerializeField] private float eyeMoveSpeed = 1.5f;   // how quickly eyes move to target
+    [SerializeField] private Vector2 lookIntervalRange = new Vector2(1f, 3f); // random delay between look changes
+
+    private Vector3 leftEyeBallDefaultPos;
+    private Vector3 rightEyeBallDefaultPos;
+    private Vector3 leftTargetOffset;
+    //private Vector3 rightTargetOffset;
 
     private void Start()
     {
+        leftEyeBallDefaultPos = leftEye.localPosition;
+        rightEyeBallDefaultPos = rightEye.localPosition;
+
         StartCoroutine(BlinkRoutine());
+        //StartCoroutine(RandomEyeMovementRoutine());
     }
 
+    // --- Blinking ---
     private IEnumerator BlinkRoutine()
     {
         while (true)
         {
-            // wait random time before blinking
             float waitTime = Random.Range(blinkIntervalRange.x, blinkIntervalRange.y);
             yield return new WaitForSeconds(waitTime);
 
-            // close eyes smoothly
             yield return StartCoroutine(ScaleEyes(closedZScale));
-
-            // short pause while closed
             yield return new WaitForSeconds(0.1f);
-
-            // open eyes smoothly
             yield return StartCoroutine(ScaleEyes(openZScale));
         }
     }
@@ -55,8 +68,43 @@ public class EyeBlink : MonoBehaviour
             yield return null;
         }
 
-        // snap to target at the end
         leftEye.localScale = leftTarget;
         rightEye.localScale = rightTarget;
+    }
+
+    // --- Random Eye Movement ---
+    private IEnumerator RandomEyeMovementRoutine()
+    {
+        while (true)
+        {
+            // pick a random offset within a circle
+            leftTargetOffset = Random.insideUnitCircle * eyeMoveRadius;
+            //rightTargetOffset = Random.insideUnitCircle * eyeMoveRadius;
+
+            float lookTime = Random.Range(lookIntervalRange.x, lookIntervalRange.y);
+            float elapsed = 0f;
+
+            while (elapsed < lookTime)
+            {
+                elapsed += Time.deltaTime;
+
+                // smooth lerp towards current target
+                leftEyeBall.localPosition = Vector3.Lerp(
+                    leftEyeBall.localPosition,
+                    leftEyeBallDefaultPos + new Vector3(leftTargetOffset.x, leftTargetOffset.y, 0),
+                    Time.deltaTime * eyeMoveSpeed
+                );
+
+                rightEyeBall.localPosition = Vector3.Lerp(
+                    rightEyeBall.localPosition,
+                    rightEyeBallDefaultPos + new Vector3(leftTargetOffset.x, leftTargetOffset.y, 0),
+                    Time.deltaTime * eyeMoveSpeed
+                );
+
+                yield return null;
+            }
+
+            // pick new target after interval
+        }
     }
 }
