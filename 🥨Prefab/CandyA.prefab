@@ -167,6 +167,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CandyFlyParticles
       objectReference: {fileID: 0}
+    - target: {fileID: 6916095124564995607, guid: 03f145f8776cc714f9d22920f1595b38, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

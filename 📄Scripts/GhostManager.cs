@@ -38,6 +38,8 @@ public class GhostManager : MonoBehaviour
     [SerializeField] Renderer ghostRenderer;
     [SerializeField] float maxDistanceGhostAndPlayer = 5f;
     [SerializeField] float minDistanceGhostAndPlayer = 0f;
+    [SerializeField] AudioSource ghostAudioSource;
+    [SerializeField] AudioClip ghostIsGettingCloser;
 
     Rigidbody rb;
     PlayerController playerController;
@@ -58,11 +60,16 @@ public class GhostManager : MonoBehaviour
     void Update()
     {
         GhostHoppingScaleAnimation(Time.time % 1f);
-        if (playerController.isGameRunning 
-        && !playerController.isDead 
+        if (playerController.isGameRunning
+        && !playerController.isDead
         && !playerController.isJetPackActive)
         {
             ReduceDistanceOverTime();
+        }
+        
+        if (distanceGhostAndPlayer == maxDistanceGhostAndPlayer / 2)
+        {
+            //ghostAudioSource.PlayOneShot(ghostIsGettingCloser);
         }
 
     }
@@ -179,5 +186,11 @@ public class GhostManager : MonoBehaviour
         float t = Mathf.InverseLerp(minDistanceGhostAndPlayer, maxDistanceGhostAndPlayer, _distanceGhostAndPlayer);
         Color newColor = Color.Lerp(Color.red, Color.white, t);
         ghostRenderer.material.color = newColor;
+      
+        Debug.Log("Mathf.Approximately(t, 0.5f): " + Mathf.Approximately(0.5f, t));
+        if(t>=0.5f && t<0.55f)
+        {
+            if (!ghostAudioSource.isPlaying) ghostAudioSource.PlayOneShot(ghostIsGettingCloser);
+        }
     }
 }

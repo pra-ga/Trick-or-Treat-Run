@@ -124,6 +124,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private AnimationCurve floatCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
     [SerializeField] Transform effectInstantiatePoint;
 
+    [Header("Audio")]
+    [SerializeField] AudioSource audioSource;
+    [SerializeField] AudioClip HelpAGhostIs;
+    [SerializeField] AudioClip ghostIsGettingCloser;
+    [SerializeField] AudioClip candyMagnet;
+    [SerializeField] AudioClip invincibility;
+    [SerializeField] AudioClip whoosh;
+    [SerializeField] AudioClip flying;
+    [SerializeField] AudioClip takeThisGhost;
+    [SerializeField] AudioClip Ouch;
+
     #region Post Processing
     [Header("Post Processing")]
     [SerializeField] VolumeProfile postProcessingProfile;
@@ -151,6 +162,7 @@ public class PlayerController : MonoBehaviour
         invincibleParticles.SetActive(false);
         //magnetParticles.SetActive(false);
         UpdateProgressBar(currentProgress);
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
     }
 
     void FixedUpdate()
@@ -196,7 +208,12 @@ public class PlayerController : MonoBehaviour
 
         if (!isGameRunning || isDead) return;
 
-
+        /* bool isThrowing = anim.GetBool("IsThrowing");
+        Debug.Log("isThrowing: " + isThrowing);
+        if (isThrowing)
+        {
+            audioSource.PlayOneShot(takeThisGhost);
+        } */
 
         if (intCandiesCollected >= intMagnetMilestone && !isMagnetActive)
         {
@@ -221,6 +238,7 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator ActionsWhenDead(float delay)
     {
+        audioSource.enabled = false;
         yield return new WaitForSeconds(delay);
         heartsCollectedText.text = heartsCollected.ToString();
         totalCandiesText.text = intCandiesCollected.ToString();
@@ -434,6 +452,8 @@ public class PlayerController : MonoBehaviour
         if (other.gameObject.tag == "Obstacle" && !isInvincible)
         {
             PlayerHitParticles.Play();
+            audioSource.PlayOneShot(Ouch);
+
             if (heartsCollected <= 0)
             {
                 Debug.Log("Dead");
@@ -460,6 +480,7 @@ public class PlayerController : MonoBehaviour
             //StartCoroutine(MagnetPowerUp());
             intMagnetCounter++;
             Destroy(other.gameObject);
+            audioSource.PlayOneShot(candyMagnet);
         }
 
         if (other.gameObject.tag == "Jetpack")
@@ -468,6 +489,8 @@ public class PlayerController : MonoBehaviour
             jetPack.SetActive(true);
             Destroy(other.gameObject);
             intJetPackCounter++;
+            audioSource.PlayOneShot(whoosh);
+            audioSource.PlayOneShot(flying);
         }
 
         if (other.gameObject.tag == "Invincible")
@@ -476,7 +499,10 @@ public class PlayerController : MonoBehaviour
             StartCoroutine(InvincibilityRoutine());
             Destroy(other.gameObject);
             intInvincibilityCounter++;
+            audioSource.PlayOneShot(invincibility);
         }
+
+        
     }
 
     void OnTriggerExit(Collider other)
@@ -491,7 +517,9 @@ public class PlayerController : MonoBehaviour
     {
         if ((collision.gameObject.tag == "Obstacle" || collision.gameObject.tag == "Ghost") && !isInvincible)
         {
+            audioSource.PlayOneShot(Ouch);
             PlayerHitParticles.Play();
+
             if (heartsCollected <= 0)
             {
                 isDead = true;
@@ -503,6 +531,11 @@ public class PlayerController : MonoBehaviour
                 StartCoroutine(MoveUpAndDestroy(brokenHeartGO));
             }
         }
+        /* if (collision.gameObject.tag == "Gold")
+        {
+            Debug.Log("GOLD");
+            audioSource.PlayOneShot(takeThisGhost);
+        } */
     }
 
     /* void ReloadSceneCurrentSceneAfterDelay(float delaySeconds)
@@ -521,6 +554,7 @@ public class PlayerController : MonoBehaviour
         UIGameOverPanel.SetActive(false);
         UIStartPanel.SetActive(false);
         isGameRunning = true;
+        audioSource.PlayOneShot(HelpAGhostIs);
     }
 
     IEnumerator JetPackFlight()

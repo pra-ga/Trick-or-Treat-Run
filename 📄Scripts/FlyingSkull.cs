@@ -37,21 +37,25 @@ public class FlyingSkull : MonoBehaviour
         if (playerController != null && playerController.isDead)
             return;
 
-        elapsedTime += Time.deltaTime;
-
-        // Compute position
-        float yOffset = Mathf.Sin(elapsedTime * frequency) * amplitude;
-        float newZ = startZ - forwardSpeed * elapsedTime;
-
-        // Apply movement
-        Vector3 newPos = new Vector3(basePosition.x, basePosition.y + yOffset, newZ);
-        transform.position = newPos;
-
-        /* // Optionally destroy when out of range
-        if (destroyOnEnd && Mathf.Abs(newZ - startZ) > maxTravelDistance)
+        if (playerController.isGameRunning)
         {
-            Destroy(gameObject);
-        } */
+
+            elapsedTime += Time.deltaTime;
+
+            // Compute position
+            float yOffset = Mathf.Sin(elapsedTime * frequency) * amplitude;
+            float newZ = startZ - forwardSpeed * elapsedTime;
+
+            // Apply movement
+            Vector3 newPos = new Vector3(basePosition.x, basePosition.y + yOffset, newZ);
+            transform.position = newPos;
+
+            /* // Optionally destroy when out of range
+            if (destroyOnEnd && Mathf.Abs(newZ - startZ) > maxTravelDistance)
+            {
+                Destroy(gameObject);
+            } */
+        }
     }
 
     // Optional helper if you want to reset motion or reuse

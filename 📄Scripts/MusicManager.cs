@@ -5,10 +5,13 @@ public class MusicManager : MonoBehaviour
 {
     public static MusicManager Instance;
 
-    private AudioSource musicSource;
+    [SerializeField] private AudioSource musicSource;
+
 
     void Awake()
     {
+        //Use this for singleton if you want the music to persist 18Oct25
+
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject); // Prevent duplicate music
@@ -18,6 +21,12 @@ public class MusicManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+
+        musicSource = GetComponent<AudioSource>();
+    }
+
+    void Start()
+    {
         musicSource = GetComponent<AudioSource>();
     }
 

@@ -11,6 +11,8 @@ public class GoldManager : MonoBehaviour
     GhostManager ghostManager;
     GameObject player;
     bool isPlayerHitGold = false;
+    [SerializeField] AudioClip goldHitSound;
+    [SerializeField] AudioSource goldAudioSource;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -31,6 +33,7 @@ public class GoldManager : MonoBehaviour
     {
         if (other.gameObject.tag == "Player")
         {
+            goldAudioSource.PlayOneShot(goldHitSound);
             Vector3 forceDirection = ghost.transform.position - transform.position;
             rb.AddForce(forceDirection * goldImpulseForce, ForceMode.Impulse);
             isPlayerHitGold = true;
@@ -39,10 +42,13 @@ public class GoldManager : MonoBehaviour
         if (other.gameObject.tag == "Ghost" && isPlayerHitGold)
         {
             ghostManager.distanceGhostAndPlayer = ghostManager.originalDistanceGhostAndPlayer;
+
             player.GetComponent<PlayerController>().anim.SetTrigger("IsThrowing");
+        
+
             goldParticle.Play();
             ghostManager.ghostAnimator.SetTrigger("isHit");
-            StartCoroutine(DestroyAfterDelay(0.2f));
+            StartCoroutine(DestroyAfterDelay(1.5f));
         }
     }
     
